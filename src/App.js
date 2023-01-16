@@ -3,13 +3,17 @@ import { useGeolocated } from "react-geolocated";
 
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
+import moment from "moment/moment";
 
 let mqtt = require("mqtt/dist/mqtt");
+
+let randonNumber = Math.floor(Math.random() * 100);
+let now = moment().format("MMM Do YYYY, h:mm:ss a");
 let options = {
 	protocol: "mqtts",
 	// clientId uniquely identifies client
 	// choose any string you wish
-	clientId: "b0908853",
+	clientId: `${now}${randonNumber}`,
 };
 let client = mqtt.connect("mqtt://test.mosquitto.org:8081", options);
 
@@ -22,11 +26,13 @@ function App() {
 	const [speed, setSpeed] = useState("");
 	const [str, setStr] = useState("");
 
-	const [statusMQTT, setStatusMQTT] = useState("MQTT connecting...");
+	const [statusMQTT, setStatusMQTT] = useState("");
 	const [serialNumber, setSerilNumber] = useState("");
 	const [serialNumberText, setSerilNumberText] = useState("");
 	const [subTopic, setSubtopic] = useState("");
 	const mainTopic = "PIM/62/GPSThesis/";
+
+	const [submit, setSubmit] = useState(false);
 
 	const handleChange = (event) => {
 		setSerilNumber(event.target.value);
@@ -34,12 +40,20 @@ function App() {
 	};
 	async function handleChick() {
 		console.log("ok");
+		await setStatusMQTT("MQTT connected");
+		await setSubmit(true);
 		await setSerilNumberText(serialNumber);
 		await setSubtopic(`${mainTopic}${serialNumber}`);
 		console.log(subTopic);
 	}
 
-	const handleReload = () => {
+	const handleDisconnect = () => {
+		setSubmit(false);
+		setSerilNumberText("");
+		setSubtopic("");
+		setStatusMQTT("MQTT disconnect");
+		client.end();
+		console.log("disconnect");
 		window.location.reload();
 	};
 
@@ -58,7 +72,19 @@ function App() {
 				setSpeed(speedKmph);
 			}
 		});
-		await set_str(lat, lng, speed);
+
+		if (lat && lng) {
+			//   client.publish(subTopic, str);
+			console.log("true");
+			await set_str(lat, lng, speed);
+		} else {
+			console.log(
+				"Latitude, longitude, or speed not available, data will not be sent via MQTT",
+				lat,
+				lng,
+				speed,
+			);
+		}
 	}
 
 	async function set_str(lat, lng, speed) {
@@ -81,27 +107,34 @@ function App() {
 		let strParams = JSON.stringify(params);
 		setStr(strParams);
 		// return { strParams };
+		console.log(`${now}${randonNumber}`);
 	}
 
 	useEffect(() => {
 		const interval = setInterval(() => {
-			getPosition();
-			client.on("connect", () => {
-				console.log("connected to MQTT broker");
-				setStatusMQTT("MQTT connected");
-			});
-			client.on("offline", () => {
-				console.log("offline from MQTT broker");
-				setStatusMQTT("MQTT no connect");
-			});
+			if (submit) {
+				getPosition();
+				// console.log("connecting");
 
-			client.publish(subTopic, str, function (err) {
-				if (!err) {
-					console.log("publishing message");
-				} else {
-					console.log(err);
-				}
-			});
+				client.on("connect", () => {
+					console.log("connected to MQTT broker");
+					setStatusMQTT("MQTT connected");
+				});
+
+				client.on("offline", () => {
+					console.log("offline from MQTT broker");
+					setStatusMQTT("MQTT disconnect");
+				});
+
+				client.publish(subTopic, str, function (err) {
+					if (!err) {
+						console.log("publishing message");
+					} else {
+						console.log(err);
+						alert(err);
+					}
+				});
+			}
 		}, 500);
 		return () => clearInterval(interval);
 	});
@@ -143,7 +176,7 @@ function App() {
 						variant='outlined'
 						size='small'
 						onClick={() => {
-							handleReload();
+							handleDisconnect();
 						}}>
 						disconnect
 					</Button>
