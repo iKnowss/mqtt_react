@@ -11,14 +11,13 @@ let randonNumber = Math.floor(Math.random() * 100);
 let now = moment().format("MMM Do YYYY, h:mm:ss a");
 let options = {
 	protocol: "mqtts",
-	// clientId uniquely identifies client
-	// choose any string you wish
+
+	/* `clientId` is a unique identifier for the client. */
 	clientId: `${now}${randonNumber}`,
 };
+/* `let client = mqtt.connect("mqtt://test.mosquitto.org:8081", options);` is a function that connects
+to the MQTT broker. */
 let client = mqtt.connect("mqtt://test.mosquitto.org:8081", options);
-
-// preciouschicken.com is the MQTT topic
-// client.subscribe("PIM/62/GPSThesis/1");
 
 function App() {
 	const [lat, setLat] = useState("");
@@ -53,33 +52,44 @@ function App() {
 		setSubtopic("");
 		setStatusMQTT("MQTT disconnect");
 		client.end();
-		console.log("disconnect");
+		// console.log("disconnect");
 		window.location.reload();
 	};
 
 	async function getPosition() {
 		await navigator.geolocation.getCurrentPosition((position) => {
-			// console.log(position.coords);
-			// console.log("1");
 			setLat(position.coords.latitude);
 			setLng(position.coords.longitude);
 			// setSpeed(position.coords.speed);
-			if (position.coords.speed == null) {
+
+			if (position.coords.speed === null) {
+				console.log(
+					"🚀 ~ file: App.js:66 ~ awaitnavigator.geolocation.getCurrentPosition ~ position.coords.speed === null",
+					position.coords.speed === null,
+				);
 				setSpeed(0);
 			} else {
+				console.log(
+					"🚀 ~ file: App.js:66 ~ awaitnavigator.geolocation.getCurrentPosition ~ position.coords.speed === null",
+					position.coords.speed === null,
+				);
 				let speedMpS = position.coords.speed;
 				let speedKmph = speedMpS * 3.6;
+				console.log(
+					"🚀 ~ file: App.js:77 ~ awaitnavigator.geolocation.getCurrentPosition ~ speedKmph",
+					speedKmph,
+				);
 				setSpeed(speedKmph);
 			}
 		});
 
 		if (lat && lng) {
 			//   client.publish(subTopic, str);
-			console.log("true");
+			// console.log("true");
 			await set_str(lat, lng, speed);
 		} else {
 			console.log(
-				"Latitude, longitude, or speed not available, data will not be sent via MQTT",
+				"🚀 ~ file: App.js:97 ~ getPosition ~ Latitude, longitude, or speed not availabl",
 				lat,
 				lng,
 				speed,
@@ -92,22 +102,16 @@ function App() {
 		let strLng = JSON.stringify(lng);
 		let strSpeed = JSON.stringify(speed);
 
-		// console.log("lat");
-		// console.log("lng");
-		// console.log("speed kg/hr");
-		// console.log("SN 10");
-
 		let params = {
 			SN: serialNumberText,
 			lat: strLat,
 			lng: strLng,
 			speed: strSpeed,
 		};
-		// console.log(params);
 		let strParams = JSON.stringify(params);
+		/* `setStr(strParams);` is a function that sets the value of `str` to `strParams`. */
 		setStr(strParams);
-		// return { strParams };
-		console.log(`${now}${randonNumber}`);
+		// console.log(`${now}${randonNumber}`);
 	}
 
 	useEffect(() => {
@@ -125,15 +129,21 @@ function App() {
 					console.log("offline from MQTT broker");
 					setStatusMQTT("MQTT disconnect");
 				});
-
-				client.publish(subTopic, str, function (err) {
-					if (!err) {
-						console.log("publishing message");
-					} else {
-						console.log(err);
-						alert(err);
-					}
-				});
+				if (str) {
+					client.publish(subTopic, str, function (err) {
+						if (!err) {
+							console.log(
+								"🚀 ~ file: App.js:130 publishing message ~ str",
+								str,
+							);
+						} else {
+							console.log(err);
+							alert(err);
+						}
+					});
+				} else {
+					console.log("no data don't send data");
+				}
 			}
 		}, 500);
 		return () => clearInterval(interval);
