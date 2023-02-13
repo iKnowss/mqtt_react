@@ -113,40 +113,68 @@ function App() {
 		// console.log(`${now}${randonNumber}`);
 	}
 
-	useEffect(() => {
-		const interval = setInterval(() => {
-			if (submit) {
-				getPosition();
-				// console.log("connecting");
+	const sendSOS = () => {
+		if (submit) {
+			getPosition();
+			// console.log("connecting");
 
-				client.on("connect", () => {
-					console.log("connected to MQTT broker");
-					setStatusMQTT("MQTT connected");
-				});
+			client.on("connect", () => {
+				console.log("connected to MQTT broker");
+				setStatusMQTT("MQTT connected");
+			});
 
-				client.on("offline", () => {
-					console.log("offline from MQTT broker");
-					setStatusMQTT("MQTT disconnect");
+			client.on("offline", () => {
+				console.log("offline from MQTT broker");
+				setStatusMQTT("MQTT disconnect");
+			});
+			if (str) {
+				client.publish(subTopic, str, function (err) {
+					if (!err) {
+						console.log("🚀 ~ file: App.js:130 publishing message ~ str", str);
+					} else {
+						console.log(err);
+						alert(err);
+					}
 				});
-				if (str) {
-					client.publish(subTopic, str, function (err) {
-						if (!err) {
-							console.log(
-								"🚀 ~ file: App.js:130 publishing message ~ str",
-								str,
-							);
-						} else {
-							console.log(err);
-							alert(err);
-						}
-					});
-				} else {
-					console.log("no data don't send data");
-				}
+			} else {
+				console.log("no data don't send data");
 			}
-		}, 500);
-		return () => clearInterval(interval);
-	});
+		}
+	};
+	// useEffect(() => {
+	// 	const interval = setInterval(() => {
+	// 		if (submit) {
+	// 			getPosition();
+	// 			// console.log("connecting");
+
+	// 			client.on("connect", () => {
+	// 				console.log("connected to MQTT broker");
+	// 				setStatusMQTT("MQTT connected");
+	// 			});
+
+	// 			client.on("offline", () => {
+	// 				console.log("offline from MQTT broker");
+	// 				setStatusMQTT("MQTT disconnect");
+	// 			});
+	// 			if (str) {
+	// 				client.publish(subTopic, str, function (err) {
+	// 					if (!err) {
+	// 						console.log(
+	// 							"🚀 ~ file: App.js:130 publishing message ~ str",
+	// 							str,
+	// 						);
+	// 					} else {
+	// 						console.log(err);
+	// 						alert(err);
+	// 					}
+	// 				});
+	// 			} else {
+	// 				console.log("no data don't send data");
+	// 			}
+	// 		}
+	// 	}, 500);
+	// 	return () => clearInterval(interval);
+	// });
 
 	//get current location
 	const { coords, isGeolocationAvailable, isGeolocationEnabled } =
@@ -214,6 +242,17 @@ function App() {
 						</tr>
 					</tbody>
 				</table>
+				<div className='flex justify-center'>
+					<Button
+						variant='contained'
+						size='large'
+						color='error'
+						onClick={() => {
+							sendSOS();
+						}}>
+						SOS
+					</Button>
+				</div>
 			</div>
 		</div>
 	) : (
