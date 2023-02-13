@@ -11,7 +11,6 @@ let randonNumber = Math.floor(Math.random() * 100);
 let now = moment().format("MMM Do YYYY, h:mm:ss a");
 let options = {
 	protocol: "mqtts",
-
 	/* `clientId` is a unique identifier for the client. */
 	clientId: `${now}${randonNumber}`,
 };
